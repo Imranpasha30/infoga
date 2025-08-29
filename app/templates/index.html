@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-lg p-8">
+    <!-- Tab Navigation -->
+    <div class="flex space-x-1 mb-8 border-b border-gray-200">
+        <button class="tab-button active px-6 py-3 font-medium border-b-2 border-blue-600 text-blue-600"
+            data-tab="verify">
+            🛡️ Verify Email
+        </button>
+        <button class="tab-button px-6 py-3 font-medium text-gray-500 hover:text-gray-700" data-tab="discover">
+            🔍 Discover Emails
+        </button>
+    </div>
+
+    <!-- Verify Email Tab -->
+    <div id="verify-tab" class="tab-content">
+        <h2 class="text-2xl font-bold text-center mb-6 text-gray-800">
+            Verify Email Authenticity
+        </h2>
+
+        <form method="POST" action="/analyze" class="space-y-6">
+            <div>
+                <label for="email_content" class="block text-sm font-medium text-gray-700 mb-2">
+                    Paste Complete Email Content (including headers):
+                </label>
+                <textarea name="email_content" id="email_content" rows="20"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                    placeholder="Paste your complete email here including all headers...
+
+Example:
+Received: from mail.example.com (mail.example.com [192.168.1.1])
+Return-Path: <sender@example.com>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+From: sender@example.com
+To: recipient@yourdomain.com
+Subject: Test Email
+Date: Fri, 29 Aug 2025 14:30:00 +0530
+
+Email body content..." required></textarea>
+            </div>
+
+            <div class="text-center">
+                <button type="submit"
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-md transition duration-200 shadow-lg">
+                    🛡️ Analyze Email Authentication
+                </button>
+            </div>
+        </form>
+
+        <div class="mt-8 bg-blue-50 border border-blue-200 rounded-md p-6">
+            <h3 class="text-lg font-semibold text-blue-800 mb-3">✨ Authentication Features:</h3>
+            <div class="grid md:grid-cols-3 gap-4 text-sm text-blue-700">
+                <div>
+                    <strong>🛡️ SPF Validation</strong><br>
+                    Sender Policy Framework check
+                </div>
+                <div>
+                    <strong>🔐 DKIM Verification</strong><br>
+                    Digital signature validation
+                </div>
+                <div>
+                    <strong>📧 DMARC Analysis</strong><br>
+                    Domain authentication policy
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Discover Emails Tab -->
+    <div id="discover-tab" class="tab-content hidden">
+        <h2 class="text-2xl font-bold text-center mb-6 text-gray-800">
+            Discover Domain Emails (OSINT)
+        </h2>
+
+        <form method="POST" action="/discover" class="space-y-6">
+            <div>
+                <label for="domain" class="block text-sm font-medium text-gray-700 mb-2">
+                    Enter Domain Name:
+                </label>
+                <input type="text" name="domain" id="domain"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="example.com (without http://)" required>
+                <p class="text-sm text-gray-500 mt-1">Enter just the domain name, e.g., google.com, github.com</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <label for="max_results" class="block text-sm font-medium text-gray-700 mb-2">
+                        Maximum Results:
+                    </label>
+                    <select name="max_results" id="max_results"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <option value="50">50 results</option>
+                        <option value="100" selected>100 results</option>
+                        <option value="200">200 results</option>
+                        <option value="500">500 results</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Search Sources:
+                    </label>
+                    <div class="flex space-x-4 py-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" name="sources" value="google" checked class="mr-2">
+                            <span class="text-sm">Google</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="sources" value="bing" checked class="mr-2">
+                            <span class="text-sm">Bing</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="sources" value="pgp" checked class="mr-2">
+                            <span class="text-sm">PGP</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <button type="submit"
+                    class="bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-8 rounded-md transition duration-200 shadow-lg">
+                    🔍 Discover Emails
+                </button>
+            </div>
+        </form>
+
+        <div class="mt-8 bg-green-50 border border-green-200 rounded-md p-6">
+            <h3 class="text-lg font-semibold text-green-800 mb-3">🔍 Discovery Features:</h3>
+            <div class="grid md:grid-cols-3 gap-4 text-sm text-green-700">
+                <div>
+                    <strong>🌐 Search Engines</strong><br>
+                    Google, Bing search results
+                </div>
+                <div>
+                    <strong>🔐 PGP Servers</strong><br>
+                    Public key server lookup
+                </div>
+                <div>
+                    <strong>📊 OSINT Analysis</strong><br>
+                    Email reconnaissance & intelligence
+                </div>
+            </div>
+            <div class="mt-4 p-3 bg-yellow-100 border border-yellow-300 rounded-md">
+                <p class="text-sm text-yellow-800">
+                    <strong>⚠️ Ethical Use:</strong> This tool is for legitimate security research and domain analysis
+                    only.
+                    Respect privacy and follow applicable laws.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .tab-button.active {
+        border-bottom-color: #2563eb;
+        color: #2563eb;
+    }
+
+    .tab-button:not(.active):hover {
+        color: #374151;
+        border-bottom: 2px solid transparent;
+    }
+</style>
+
+<script>
+    // Tab switching functionality
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', () => {
+            const tabName = button.dataset.tab;
+
+            // Update button states
+            document.querySelectorAll('.tab-button').forEach(b => {
+                b.classList.remove('active', 'border-blue-600', 'text-blue-600');
+                b.classList.add('text-gray-500');
+            });
+
+            button.classList.add('active', 'border-blue-600', 'text-blue-600');
+            button.classList.remove('text-gray-500');
+
+            // Show/hide tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(tabName + '-tab').classList.remove('hidden');
+        });
+    });
+</script>
+{% endblock %}
