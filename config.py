@@ -1,6 +1,6 @@
 """
-Infoga - Configuration Module
-Author: Imran Pasha
+ReconMail - Configuration Module
+Author: Imran Pasha (https://github.com/Imranpasha30)
 """
 
 VERSION = "2.1.0"
@@ -27,12 +27,12 @@ PGP_KEYSERVERS = [
 ]
 
 BANNER = r"""
-  ___        __                    
- |_ _|_ __  / _| ___   __ _  __ _  
-  | || '_ \| |_ / _ \ / _` |/ _` | 
-  | || | | |  _| (_) | (_| | (_| | 
- |___|_| |_|_|  \___/ \__, |\__,_| 
-                      |___/        
- Email OSINT & Threat Reconnaissance Framework
+  ____                      __  __       _ _ 
+ |  _ \ ___  ___ ___  _ __ |  \/  | __ _(_) |
+ | |_) / _ \/ __/ _ \| '_ \| |\/| |/ _` | | |
+ |  _ <  __/ (_| (_) | | | | |  | | (_| | | |
+ |_| \_\___|\___\___/|_| |_|_|  |_|\__,_|_|_|
+                                             
+ ReconMail - Email OSINT & Threat Reconnaissance Framework
  Version: {version} | Author: Imran Pasha
 """

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Infoga - Email OSINT & Threat Reconnaissance Framework
+ReconMail - Email OSINT & Threat Reconnaissance Framework
 Author: Imran Pasha (https://github.com/Imranpasha30)
 """
 
@@ -189,7 +189,7 @@ def main():
     print_banner()
 
     parser = argparse.ArgumentParser(
-        description="Infoga - Email OSINT & Threat Reconnaissance Framework",
+        description="ReconMail - Email OSINT & Threat Reconnaissance Framework",
         formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument("-d", "--domain", help="Target domain to harvest emails (e.g. example.com)")

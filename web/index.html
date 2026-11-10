@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReconMail — Email OSINT & Threat Reconnaissance Dashboard</title>
+<style>
+  :root {
+    --bg: #0a0e17;
+    --card: #111827;
+    --card-hover: #1f293d;
+    --border: #1f2937;
+    --border-glow: #0284c7;
+    --text: #f3f4f6;
+    --text-muted: #9ca3af;
+    --cyan: #06b6d4;
+    --cyan-glow: rgba(6, 182, 212, 0.25);
+    --blue: #3b82f6;
+    --green: #10b981;
+    --amber: #f59e0b;
+    --red: #ef4444;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding-bottom: 50px;
+  }
+
+  /* Top Navigation */
+  .navbar {
+    background: rgba(17, 24, 39, 0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .brand-logo {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #0284c7, #06b6d4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 0 15px var(--cyan-glow);
+  }
+  .brand-title {
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: #ffffff;
+  }
+  .brand-title span { color: var(--cyan); }
+  .brand-sub {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    font-family: monospace;
+  }
+  .nav-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    padding: 5px 12px;
+    border-radius: 9999px;
+    font-size: 12px;
+    color: var(--green);
+    font-weight: 600;
+  }
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.9); }
+  }
+
+  /* Main Container */
+  .container {
+    max-width: 1240px;
+    margin: 28px auto;
+    padding: 0 20px;
+  }
+
+  /* Scanner Hero Card */
+  .scanner-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 26px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .scanner-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--blue), var(--cyan), var(--green));
+  }
+
+  .mode-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .mode-btn {
+    padding: 8px 16px;
+    background: #1e293b;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .mode-btn.active {
+    background: var(--cyan);
+    color: #0f172a;
+    border-color: var(--cyan);
+    box-shadow: 0 0 12px var(--cyan-glow);
+  }
+
+  .input-group {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .target-input {
+    flex: 1;
+    background: #0b0f19;
+    border: 1px solid #334155;
+    color: #ffffff;
+    font-family: 'Consolas', monospace;
+    font-size: 15px;
+    padding: 12px 18px;
+    border-radius: 8px;
+    outline: none;
+    transition: border 0.2s, box-shadow 0.2s;
+  }
+  .target-input:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 14px var(--cyan-glow);
+  }
+  .launch-btn {
+    background: linear-gradient(135deg, #0284c7, #06b6d4);
+    color: #ffffff;
+    border: none;
+    padding: 12px 26px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.15s, box-shadow 0.2s;
+  }
+  .launch-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 18px var(--cyan-glow);
+  }
+  .launch-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .quick-picks {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+  .pick-pill {
+    background: #1e293b;
+    color: #cbd5e1;
+    padding: 3px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+  .pick-pill:hover {
+    background: #334155;
+    color: var(--cyan);
+    border-color: var(--cyan);
+  }
+
+  .sources-box {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+    font-size: 13px;
+  }
+  .source-label { color: var(--text-muted); font-weight: 600; font-size: 12px; }
+  .checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    color: #cbd5e1;
+  }
+  .checkbox-item input {
+    cursor: pointer;
+    accent-color: var(--cyan);
+  }
+
+  /* Progress Banner */
+  .scan-progress {
+    display: none;
+    background: rgba(6, 182, 212, 0.1);
+    border: 1px solid rgba(6, 182, 212, 0.3);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin-bottom: 24px;
+    align-items: center;
+    gap: 14px;
+  }
+  .spinner {
+    width: 22px;
+    height: 22px;
+    border: 3px solid rgba(6, 182, 212, 0.3);
+    border-top-color: var(--cyan);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Metrics Strip */
+  .metrics-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .metric-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .metric-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+  .metric-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+  .metric-val { font-size: 22px; font-weight: 800; color: #ffffff; }
+
+  /* Main Results Grid */
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  @media (max-width: 900px) {
+    .results-grid { grid-template-columns: 1fr; }
+  }
+
+  .result-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  }
+  .result-card h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-badge {
+    background: rgba(6, 182, 212, 0.15);
+    color: var(--cyan);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-weight: 700;
+  }
+
+  /* Email List */
+  .email-list {
+    max-height: 280px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .email-item {
+    background: #0b0f19;
+    border: 1px solid #1f2937;
+    border-radius: 6px;
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: monospace;
+    font-size: 13.5px;
+    transition: border 0.15s;
+  }
+  .email-item:hover { border-color: var(--cyan); }
+  .copy-btn {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #cbd5e1;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .copy-btn:hover { background: var(--cyan); color: #0f172a; }
+
+  /* DNS Infrastructure Table */
+  .info-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .info-table td {
+    padding: 8px 6px;
+    border-bottom: 1px solid #1f2937;
+  }
+  .info-table td.label {
+    width: 110px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .info-table td.val {
+    font-family: monospace;
+    color: #e2e8f0;
+    word-break: break-all;
+  }
+
+  /* Console Terminal */
+  .terminal {
+    background: #050811;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: 14px;
+    font-family: 'Consolas', monospace;
+    font-size: 12px;
+    color: #38bdf8;
+    max-height: 220px;
+    overflow-y: auto;
+    line-height: 1.6;
+    margin-top: 14px;
+  }
+  .terminal .line-dim { color: #64748b; }
+  .terminal .line-green { color: #10b981; }
+  .terminal .line-amber { color: #f59e0b; }
+
+  /* Toolbar */
+  .toolbar {
+    margin-top: 24px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+  .tool-btn {
+    padding: 8px 16px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #cbd5e1;
+    border-radius: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+  .tool-btn:hover {
+    background: #334155;
+    color: #ffffff;
+  }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<div class="navbar">
+  <div class="brand">
+    <div class="brand-logo">🔍</div>
+    <div>
+      <div class="brand-title">RECON<span>MAIL</span> // OSINT CONSOLE</div>
+      <div class="brand-sub">Email &amp; Domain Threat Intelligence Engine</div>
+    </div>
+  </div>
+  <div class="nav-status">
+    <div class="status-dot"></div>
+    <span>ENGINE ONLINE</span>
+  </div>
+</div>
+
+<!-- MAIN CONTAINER -->
+<div class="container">
+
+  <!-- SCANNER INPUT CARD -->
+  <div class="scanner-card">
+    <div class="mode-selector">
+      <button class="mode-btn active" id="modeDomain" onclick="setMode('domain')">🌐 Domain Reconnaissance</button>
+      <button class="mode-btn" id="modeEmail" onclick="setMode('email')">✉️ Single Email Audit</button>
+    </div>
+
+    <div class="input-group">
+      <input type="text" class="target-input" id="targetInput" placeholder="Enter target domain (e.g. linux-foundation.org, bornsec.com)..." value="linux-foundation.org">
+      <button class="launch-btn" id="launchBtn" onclick="startScan()">
+        <span>🚀</span>
+        <span id="btnText">Launch Recon</span>
+      </button>
+    </div>
+
+    <div class="quick-picks">
+      <span>Quick Targets:</span>
+      <span class="pick-pill" onclick="setTarget('bornsec.com')">bornsec.com</span>
+      <span class="pick-pill" onclick="setTarget('linux-foundation.org')">linux-foundation.org</span>
+      <span class="pick-pill" onclick="setTarget('python.org')">python.org</span>
+      <span class="pick-pill" onclick="setTarget('github.com')">github.com</span>
+      <span class="pick-pill" onclick="setTarget('torvalds@linux-foundation.org', 'email')">torvalds@linux-foundation.org</span>
+    </div>
+
+    <div class="sources-box" id="sourcesBox">
+      <span class="source-label">Active Intelligence Feeds:</span>
+      <label class="checkbox-item"><input type="checkbox" id="srcPgp" checked> PGP Keyservers</label>
+      <label class="checkbox-item"><input type="checkbox" id="srcGoogle" checked> Google Search</label>
+      <label class="checkbox-item"><input type="checkbox" id="srcBing" checked> Bing Search</label>
+      <label class="checkbox-item"><input type="checkbox" id="srcDuck" checked> DuckDuckGo</label>
+      <label class="checkbox-item"><input type="checkbox" id="srcDns" checked> DNS MX / SPF Resolvers</label>
+    </div>
+  </div>
+
+  <!-- PROGRESS BANNER -->
+  <div class="scan-progress" id="scanProgress">
+    <div class="spinner"></div>
+    <div>
+      <div style="font-weight: 700; color: #ffffff;" id="progressTitle">Executing OSINT Reconnaissance...</div>
+      <div style="font-size: 12px; color: var(--text-muted);" id="progressDetail">Resolving MX gateways and harvesting public keys...</div>
+    </div>
+  </div>
+
+  <!-- METRICS STRIP -->
+  <div class="metrics-strip">
+    <div class="metric-card">
+      <div class="metric-icon" style="background: rgba(6,182,212,0.15); color: var(--cyan);">✉️</div>
+      <div>
+        <div class="metric-label">Discovered Emails</div>
+        <div class="metric-val" id="metricEmails">3</div>
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon" style="background: rgba(59,130,246,0.15); color: var(--blue);">🛡️</div>
+      <div>
+        <div class="metric-label">Mail Gateways (MX)</div>
+        <div class="metric-val" id="metricMx">5</div>
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon" style="background: rgba(16,185,129,0.15); color: var(--green);">🔒</div>
+      <div>
+        <div class="metric-label">SPF Security Policy</div>
+        <div class="metric-val" style="font-size: 16px; color: var(--green);" id="metricSpf">Enforced (~all)</div>
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon" style="background: rgba(245,158,11,0.15); color: var(--amber);">⚡</div>
+      <div>
+        <div class="metric-label">Target Status</div>
+        <div class="metric-val" style="font-size: 16px;" id="metricStatus">Active Target</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN RESULTS GRID -->
+  <div class="results-grid">
+    
+    <!-- CARD 1: EMAILS -->
+    <div class="result-card">
+      <h3>
+        <span>📬 Discovered Email Footprint</span>
+        <button class="copy-btn" onclick="copyAllEmails()">Copy All</button>
+      </h3>
+      <div class="email-list" id="emailListContainer">
+        <div class="email-item">
+          <span>gpg-lsb@linux-foundation.org</span>
+          <button class="copy-btn" onclick="copyText('gpg-lsb@linux-foundation.org')">Copy</button>
+        </div>
+        <div class="email-item">
+          <span>licquia@linux-foundation.org</span>
+          <button class="copy-btn" onclick="copyText('licquia@linux-foundation.org')">Copy</button>
+        </div>
+        <div class="email-item">
+          <span>lsb-repo@linux-foundation.org</span>
+          <button class="copy-btn" onclick="copyText('lsb-repo@linux-foundation.org')">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 2: DNS & MAIL INFRASTRUCTURE -->
+    <div class="result-card">
+      <h3>
+        <span>🏢 Mail &amp; DNS Infrastructure</span>
+        <span class="card-badge" id="dnsBadge">SPF Verified</span>
+      </h3>
+      <table class="info-table">
+        <tbody>
+          <tr>
+            <td class="label">Target Domain:</td>
+            <td class="val" id="dnsTarget">linux-foundation.org</td>
+          </tr>
+          <tr>
+            <td class="label">MX Records:</td>
+            <td class="val" id="dnsMx">
+              aspmx.l.google.com<br>
+              alt1.aspmx.l.google.com<br>
+              alt2.aspmx.l.google.com
+            </td>
+          </tr>
+          <tr>
+            <td class="label">SPF Record:</td>
+            <td class="val" id="dnsSpf">v=spf1 ip4:140.211.169.12/30 include:_spf.google.com ~all</td>
+          </tr>
+          <tr>
+            <td class="label">Mail Provider:</td>
+            <td class="val" id="dnsProvider" style="color: var(--cyan);">Google Workspace (Enterprise)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- ACTIVITY LOG TERMINAL -->
+  <div class="result-card" style="margin-top: 24px;">
+    <h3>
+      <span>🖥️ Live Reconnaissance Activity Terminal</span>
+      <span class="card-badge" style="background:#1e293b; color:#94a3b8;">Terminal Log</span>
+    </h3>
+    <div class="terminal" id="terminalLog">
+      <div class="line-dim">[14:47:49] [*] Initializing ReconMail OSINT engine v2.1.0...</div>
+      <div class="line-dim">[14:47:49] [+] Resolving DNS MX gateways for linux-foundation.org...</div>
+      <div class="line-green">[14:47:50] [✓] Found 5 MX records (Google Workspace)</div>
+      <div class="line-dim">[14:47:50] [+] Querying public PGP keyservers (Ubuntu HKP)...</div>
+      <div class="line-green">[14:47:51] [✓] Extracted 3 verified public PGP key email identities</div>
+      <div class="line-dim">[14:47:51] [✓] Reconnaissance cycle finished. Ready for next query.</div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <button class="tool-btn" onclick="exportJSON()">💾 Export JSON</button>
+      <button class="tool-btn" onclick="exportCSV()">📄 Export CSV</button>
+      <button class="tool-btn" onclick="window.print()">🖨️ Print Report</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let currentMode = 'domain';
+  let lastScanData = {
+    target: "linux-foundation.org",
+    emails: ["gpg-lsb@linux-foundation.org", "licquia@linux-foundation.org", "lsb-repo@linux-foundation.org"],
+    dns: {
+      mx: ["aspmx.l.google.com", "alt1.aspmx.l.google.com", "alt2.aspmx.l.google.com"],
+      spf: "v=spf1 ip4:140.211.169.12/30 include:_spf.google.com ~all"
+    }
+  };
+
+  function setMode(mode) {
+    currentMode = mode;
+    document.getElementById('modeDomain').classList.toggle('active', mode === 'domain');
+    document.getElementById('modeEmail').classList.toggle('active', mode === 'email');
+    
+    const input = document.getElementById('targetInput');
+    const sourcesBox = document.getElementById('sourcesBox');
+    
+    if (mode === 'domain') {
+      input.placeholder = "Enter target domain (e.g. linux-foundation.org, bornsec.com)...";
+      if (!input.value.includes('.')) input.value = "linux-foundation.org";
+      sourcesBox.style.display = 'flex';
+    } else {
+      input.placeholder = "Enter target email (e.g. torvalds@linux-foundation.org)...";
+      if (!input.value.includes('@')) input.value = "torvalds@linux-foundation.org";
+      sourcesBox.style.display = 'none';
+    }
+  }
+
+  function setTarget(val, mode = 'domain') {
+    setMode(mode);
+    document.getElementById('targetInput').value = val;
+    startScan();
+  }
+
+  async function startScan() {
+    const target = document.getElementById('targetInput').value.trim();
+    if (!target) return alert('Please enter a target domain or email.');
+
+    const btn = document.getElementById('launchBtn');
+    const btnText = document.getElementById('btnText');
+    const progress = document.getElementById('scanProgress');
+    const terminal = document.getElementById('terminalLog');
+
+    btn.disabled = true;
+    btnText.innerText = "Scanning...";
+    progress.style.display = 'flex';
+
+    // Add log
+    const now = new Date().toLocaleTimeString();
+    terminal.innerHTML += `<div class="line-dim">[${now}] [+] Launching ${currentMode} analysis on: ${target}...</div>`;
+    terminal.scrollTop = terminal.scrollHeight;
+
+    // Gather active sources
+    const sources = [];
+    if (document.getElementById('srcPgp').checked) sources.push('pgp');
+    if (document.getElementById('srcGoogle').checked) sources.push('google');
+    if (document.getElementById('srcBing').checked) sources.push('bing');
+    if (document.getElementById('srcDuck').checked) sources.push('duckduckgo');
+
+    try {
+      const response = await fetch('/api/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          target: target,
+          mode: currentMode,
+          sources: sources
+        })
+      });
+
+      const res = await response.json();
+      if (res.status === 'success') {
+        renderResults(res);
+      } else {
+        alert(res.error || 'Scan failed.');
+      }
+    } catch (err) {
+      terminal.innerHTML += `<div style="color:var(--red);">[${new Date().toLocaleTimeString()}] [!] Connection error: ${err.message}</div>`;
+    } finally {
+      btn.disabled = false;
+      btnText.innerText = "Launch Recon";
+      progress.style.display = 'none';
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+  }
+
+  function renderResults(res) {
+    const data = res.data;
+    lastScanData = data;
+    const terminal = document.getElementById('terminalLog');
+    const now = new Date().toLocaleTimeString();
+
+    if (res.mode === 'domain') {
+      const emails = data.emails || [];
+      document.getElementById('metricEmails').innerText = emails.length;
+      
+      // Update email list container
+      const container = document.getElementById('emailListContainer');
+      if (emails.length === 0) {
+        container.innerHTML = `<div style="color:var(--text-muted); padding:10px;">No public emails discovered on queried sources.</div>`;
+      } else {
+        container.innerHTML = emails.map(e => `
+          <div class="email-item">
+            <span>${e}</span>
+            <button class="copy-btn" onclick="copyText('${e}')">Copy</button>
+          </div>
+        `).join('');
+      }
+
+      // Update DNS Info
+      const dns = data.dns || {};
+      const mx = dns.mx || [];
+      document.getElementById('metricMx').innerText = mx.length;
+      document.getElementById('dnsTarget').innerText = data.domain || res.target;
+      document.getElementById('dnsMx').innerHTML = mx.length > 0 ? mx.join('<br>') : '<span style="color:var(--text-muted);">None</span>';
+      
+      const spf = dns.spf || 'Not Configured';
+      document.getElementById('dnsSpf').innerText = spf;
+      
+      if (spf.includes('~all')) {
+        document.getElementById('metricSpf').innerText = 'SoftFail (~all)';
+        document.getElementById('metricSpf').style.color = 'var(--amber)';
+      } else if (spf.includes('-all')) {
+        document.getElementById('metricSpf').innerText = 'Strict (-all)';
+        document.getElementById('metricSpf').style.color = 'var(--green)';
+      } else {
+        document.getElementById('metricSpf').innerText = 'None';
+        document.getElementById('metricSpf').style.color = 'var(--red)';
+      }
+
+      // Detect mail provider
+      let provider = 'Custom Gateway';
+      const mxStr = mx.join(' ').toLowerCase();
+      if (mxStr.includes('google') || mxStr.includes('aspmx')) provider = 'Google Workspace (Enterprise)';
+      else if (mxStr.includes('outlook') || mxStr.includes('microsoft')) provider = 'Microsoft 365 Defender';
+      else if (mxStr.includes('zoho')) provider = 'Zoho Mail Enterprise';
+      else if (mxStr.includes('pphosted') || mxStr.includes('proofpoint')) provider = 'Proofpoint Secure Gateway';
+      document.getElementById('dnsProvider').innerText = provider;
+
+      terminal.innerHTML += `<div class="line-green">[${now}] [✓] Recon completed: Discovered ${emails.length} email(s), ${mx.length} MX gateway(s).</div>`;
+    } else {
+      // Single email check
+      document.getElementById('metricEmails').innerText = "1";
+      document.getElementById('metricMx').innerText = (data.dns && data.dns.mx) ? data.dns.mx.length : 0;
+      document.getElementById('dnsTarget').innerText = data.email;
+      
+      const container = document.getElementById('emailListContainer');
+      container.innerHTML = `
+        <div class="email-item">
+          <span>${data.email}</span>
+          <button class="copy-btn" onclick="copyText('${data.email}')">Copy</button>
+        </div>
+      `;
+      terminal.innerHTML += `<div class="line-green">[${now}] [✓] Targeted inspection finished for: ${data.email}</div>`;
+    }
+  }
+
+  function copyText(txt) {
+    navigator.clipboard.writeText(txt);
+    alert('Copied to clipboard: ' + txt);
+  }
+
+  function copyAllEmails() {
+    const emails = lastScanData.emails || [];
+    if (emails.length === 0) return alert('No emails to copy.');
+    navigator.clipboard.writeText(emails.join('\n'));
+    alert(`Copied all ${emails.length} email(s) to clipboard!`);
+  }
+
+  function exportJSON() {
+    const blob = new Blob([JSON.stringify(lastScanData, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `reconmail_recon_${lastScanData.domain || 'report'}.json`;
+    a.click();
+  }
+
+  function exportCSV() {
+    const emails = lastScanData.emails || [];
+    let csv = "Email,Domain\n";
+    emails.forEach(e => {
+      csv += `"${e}","${lastScanData.domain || ''}"\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `reconmail_emails_${lastScanData.domain || 'report'}.csv`;
+    a.click();
+  }
+</script>
+
+</body>
+</html>
